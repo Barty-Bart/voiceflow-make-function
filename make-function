@@ -1,0 +1,60 @@
+export default async function main(args) {
+  // Extract input variables from args
+  const { threadID, last_utterance, makeUrl } = args.inputVars;
+
+  // Validate that the required input variable is provided
+  if (!threadID || !last_utterance || !makeUrl) {
+    return {
+      next: { path: 'error' },
+      trace: [{ type: "debug", payload: { message: "Missing required input variables for this function" } }]
+    };
+  }
+
+  // Define the URL for the Replit app
+  const url = `${makeUrl}`;
+
+  // Configure the fetch request
+  const config = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        thread_id: `${threadID}`,
+        userMessage: `${last_utterance}`
+    })
+  };
+
+  try {
+    // Make the API call
+    const response = await fetch(url, config);
+
+    // Check if the response status is OK
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Extract the JSON body from the response
+    const responseBody = response.json;
+
+    // Validate the responseBody structure as expected
+    if (!responseBody || typeof responseBody !== 'object') {
+      throw new Error("Invalid or missing response body from the API");
+    }
+
+    // Example: Extract user name and email from the response
+    const thread_id = responseBody.thread;
+    const message = responseBody.message;
+
+    // Create the success return object with extracted data
+    return {
+      outputVars: { thread_id, message },
+      next: { path: 'success' },
+    };
+  } catch (error) {
+    return {
+      next: { path: 'error' },
+      trace: [{ type: "debug", payload: { message: "Error: " + error } }]
+    };
+  }
+}
